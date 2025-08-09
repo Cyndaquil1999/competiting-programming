@@ -10,9 +10,6 @@
 ![C++](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/cyndaquil1999/competiting-programming/main/docs/badges/cpp.json)
 
 <!-- solved:start -->
-**総数**: 138
-**コンテスト別**: ABC: 83 | AGC: 9 | ARC: 3 | OTHER: 29 | TYPICAL90: 14
-**言語別**: C++: 24 | Python: 114
 
 | Contest | Round | Problem | Lang | File | Task |
 |---|---:|:---:|:---:|---|---|
