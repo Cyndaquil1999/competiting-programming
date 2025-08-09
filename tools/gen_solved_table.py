@@ -138,11 +138,6 @@ def make_markdown():
     lang_summary = " | ".join(f"{k}: {v}" for k, v in sorted(per_lang.items()))
 
     lines = []
-    lines.append(f"**総数**: {total}")
-    if contest_summary:
-        lines.append(f"**コンテスト別**: {contest_summary}")
-    if lang_summary:
-        lines.append(f"**言語別**: {lang_summary}")
     lines.append("")
     lines.append("| Contest | Round | Problem | Lang | File | Task |")
     lines.append("|---|---:|:---:|:---:|---|---|")
