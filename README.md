@@ -10,10 +10,6 @@
 ![C++](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/cyndaquil1999/competiting-programming/main/docs/badges/cpp.json)
 
 <!-- solved:start -->
-**総数**: 143
-**コンテスト別**: ABC: 86 | AGC: 9 | ARC: 3 | OTHER: 45
-**言語別**: C++: 24 | Python: 119
-
 | Contest | Round | Problem | Lang | File | Task |
 |---|---:|:---:|:---:|---|---|
 | ABC | 023 | D | Python | [abc/023/023d.py](abc/023/023d.py) | [abc023_d](https://atcoder.jp/contests/abc023/tasks/abc023_d) |
