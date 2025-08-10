@@ -11,7 +11,7 @@ Usage: $(basename "$0") [-e EXT] <ATCODER_TASK_URL>
 USAGE
 }
 
-ext="py"
+ext="${AC_NEW_EXT:-py}"
 while getopts ":e:h" opt; do
   case "$opt" in
     e) ext="${OPTARG#.}" ;;   # 先頭ドットは除去
@@ -36,8 +36,7 @@ fi
 if [[ "$contest" =~ ^(abc|arc|agc)([0-9]+)$ ]]; then
   prefix="${BASH_REMATCH[1]}"
   num="${BASH_REMATCH[2]}"
-  # ✗ round=$(printf "%03d" "$num")   # 063 が 8進扱いになり 051 になってしまう
-  round=$(printf "%03d" "$((10#$num))")  # ← 10進に固定してゼロ埋め
+  round=$(printf "%03d" "$((10#$num))")  # 8進誤解釈対策
   outdir="$prefix/$round"
 else
   outdir="other/$contest"
@@ -48,18 +47,13 @@ outfile="$outdir/$task.$ext"
 
 if [[ -e "$outfile" ]]; then
   echo "既に存在します: $outfile"
-  echo "$outfile"
-  exit 0
-fi
-
-# 拡張子ごとの生成
-case "$ext" in
-  py)
-    # Python の雛型は不要 → 空ファイルを作成
-    : > "$outfile"
-    ;;
-  cpp|cc|cxx)
-    cat > "$outfile" <<EOF
+else
+  # 拡張子ごとの生成
+  case "$ext" in
+    py)
+      : > "$outfile" ;;                 # Python は空ファイル
+    cpp|cc|cxx)
+      cat > "$outfile" <<EOF
 // URL: ${url}
 // contest: ${contest}
 #include <bits/stdc++.h>
@@ -74,12 +68,41 @@ int main() {
     return 0;
 }
 EOF
-    ;;
-  *)
-    # それ以外は空ファイルだけ作る
-    : > "$outfile"
-    ;;
-esac
+      ;;
+    *)
+      : > "$outfile" ;;
+  esac
+  echo "created: $outfile"
+fi
 
-echo "created: $outfile"
+# samples ディレクトリと sample.in を用意
+samples_dir="$outdir/samples"
+mkdir -p "$samples_dir"
+
+if command -v oj >/dev/null 2>&1; then
+  # サンプルを取得（失敗してもスクリプトは続行）
+  if ! oj download "$url" -d "$samples_dir" >/dev/null 2>&1; then
+    echo "warn: oj download に失敗しました（$url）" >&2
+  fi
+
+  # 最初の .in を sample.in にコピー
+  first_in="$(ls "$samples_dir"/*.in 2>/dev/null | sort | head -n 1 || true)"
+  if [[ -n "${first_in:-}" ]]; then
+    cp "$first_in" "$outdir/sample.in"
+  else
+    : > "$outdir/sample.in"
+    echo "warn: サンプル入力が見つからなかったため、空の sample.in を作成しました" >&2
+  fi
+else
+  : > "$outdir/sample.in"
+  echo "warn: 'oj' が見つかりません。'pip install online-judge-tools' を推奨します。" >&2
+fi
+
+# 生成物を表示
 echo "$outfile"
+echo "$outdir/sample.in"
+
+# 生成直後にエディタで開く（任意）
+if [[ -n "${EDITOR:-}" ]]; then
+  "$EDITOR" "$outfile"
+fi
