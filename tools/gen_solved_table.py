@@ -8,13 +8,8 @@ from collections import defaultdict
 REPO_ROOT = Path(__file__).resolve().parents[1]
 README = REPO_ROOT / "README.md"
 
-BADGE_DIR = REPO_ROOT / "docs" / "badges"
-BADGE_DIR.mkdir(parents=True, exist_ok=True)
-
-# ここに表を差し込むマーカーをREADMEに用意しておく
 START_MARK = "<!-- solved:start -->"
 END_MARK = "<!-- solved:end -->"
-
 
 LANG_MAP = {
     ".py": "Python",
@@ -25,55 +20,28 @@ LANG_MAP = {
     ".js": "JavaScript",
 }
 
+# other/ の特殊マッピング（ディレクトリ名 -> contest slug / task prefix）
+OTHER_CONTEST_MAP = {
+    # Educational DP Contest
+    "edpc": {"contest": "dp", "task_prefix": "dp_"},
+    # Panasonic 2020
+    "パナコン2020": {"contest": "panasonic2020", "task_prefix": "panasonic2020_"},
+    # Sumitomo Trust 2019
+    "三井住友信託銀行プロコン2019": {"contest": "sumitrust2019", "task_prefix": "sumitrust2019_"},
+    # Hitachi 2020
+    "日立製作所 社会システム事業部 プログラミングコンテスト2020": {
+        "contest": "hitachi2020",
+        "task_prefix": "hitachi2020_",
+    },
+    # code-festival 2016 qual B
+    "codefestival2016qualb": {
+        "contest": "code-festival-2016-qualb",
+        "task_prefix": "code_festival_2016_qualb_",
+    },
+    # JOI/JOIG は下のロジックで自動判定するのでここには置かない
+}
 
-def detect_contest_round_problem(path: Path):
-    """
-    返却: (contest, round, problem_letter)
-    - abc/123/b.py           -> ('abc', '123', 'b')
-    - abc/045/045c.py        -> ('abc', '045', 'c')
-    - arc/084/084c.py        -> ('arc', '084', 'c')
-    - agc/003/A.py           -> ('agc', '003', 'a')
-    - その他は best-effort（problem_letter はファイル名から単語先頭の a~f を拾う）
-    """
-    parts = path.parts
-    # 期待: <root>/<contest>/<round>/<file>
-    if len(parts) < 3:
-        return None
-
-    contest = parts[-3].lower()  # abc, arc, agc, other...
-    round_ = parts[-2]
-
-    fname = parts[-1]
-    stem = Path(fname).stem  # 049c, b, c_1 など
-    m = re.search(r'([a-fA-F])', stem)
-    letter = m.group(1).lower() if m else None
-
-    # 大文字ファイル(A.cpp)対応
-    if letter is None and re.fullmatch(r'[A-F]', stem):
-        letter = stem.lower()
-
-    # round は 3桁ゼロ埋めしたい（数字のみ想定）
-    m_round = re.search(r'(\d+)', round_)
-    if m_round:
-        round_ = f"{int(m_round.group(1)):03d}"
-    else:
-        # typical90など数字じゃないケースはそのまま
-        pass
-
-    return (contest, round_, letter)
-
-
-def atcoder_task_url(contest, round_, letter):
-    """
-    ABC/ARC/AGCは規則的なのでリンク生成（それ以外はNone）
-    例: https://atcoder.jp/contests/abc139/tasks/abc139_b
-    """
-    if contest not in ("abc", "arc", "agc"):
-        return None
-    if not letter:
-        return None
-    slug = f"{contest}{int(round_):03d}"
-    return f"https://atcoder.jp/contests/{slug}/tasks/{slug}_{letter}"
+ASCII_HYPHEN_RE = re.compile(r"^[a-z0-9-]+$")
 
 
 def iter_solution_files():
@@ -88,6 +56,142 @@ def iter_solution_files():
                 yield p
 
 
+def parse_entry(rel: Path):
+    """
+    1ファイルから表示用情報を抽出。
+    戻り値 dict:
+      {
+        group: 'abc'|'arc'|'agc'|'other',
+        round: '048' or subcontest name,
+        prob: 'A'.. or '—',
+        contest_slug: 'abc048' / 'math-and-algorithm' / 'dp' / ... (Taskリンク用),
+        task_slug: 'abc048_a' / 'math_and_algorithm_af' / 'dp_a' / ... (Taskリンク用)
+      }
+    """
+    parts = rel.parts
+    if len(parts) < 2:
+        return None
+    group = parts[0].lower()
+    if group in {"abc", "arc", "agc"}:
+        if len(parts) < 3:
+            return None
+        round_dir = parts[1]
+        fname = parts[-1]
+        stem = Path(fname).stem
+        m_let = re.search(r"([a-fA-F])", stem)
+        letter = m_let.group(1).lower() if m_let else None
+
+        m_num = re.search(r"(\d+)", round_dir)
+        round_ = f"{int(m_num.group(1)):03d}" if m_num else round_dir
+
+        contest_slug = f"{group}{int(round_):03d}" if round_.isdigit(
+        ) else f"{group}{round_}"
+        task_slug = f"{contest_slug}_{letter}" if letter else None
+
+        return {
+            "group": group,
+            "round": round_,
+            "prob": (letter or "—").upper(),
+            "contest_slug": contest_slug,
+            "task_slug": task_slug,
+        }
+
+    # other/
+    if group == "other":
+        if len(parts) < 3:
+            return None
+        subcontest = parts[1]
+        fname = parts[-1]
+        # 例: math_and_algorithm_af / A / joi2023_yo1a_d / 010 など
+        stem = Path(fname).stem
+
+        # 1) 既知のマッピング
+        if subcontest in OTHER_CONTEST_MAP:
+            mapping = OTHER_CONTEST_MAP[subcontest]
+            contest_slug = mapping["contest"]
+            prefix = mapping.get("task_prefix", "")
+            # stem が単文字(A/B/...)なら letter を使う、それ以外は stem をそのまま
+            if re.fullmatch(r"[A-Za-z]", stem):
+                letter = stem.lower()
+                task_slug = f"{prefix}{letter}"
+                prob = stem.upper()
+            else:
+                # すでに完全スラッグなら prefix 不要、そうでなければ prefix+stem
+                if stem.startswith(prefix):
+                    task_slug = stem
+                else:
+                    task_slug = f"{prefix}{stem}"
+                # 問題記号は末尾の _x を拾う
+                m_last = re.search(r"_([a-z])$", task_slug)
+                prob = (m_last.group(1).upper() if m_last else "—")
+            return {
+                "group": group,
+                "round": subcontest,
+                "prob": prob,
+                "contest_slug": contest_slug,
+                "task_slug": task_slug,
+            }
+
+        # 2) JOI/JOIG 系（例: joi2023_yo1a_d, joig2023_b）
+        if stem.startswith("joi") or stem.startswith("joig"):
+            # joi2023_yo1a_d → contest joi2023yo1a / task joi2023_yo1a_d
+            # joig2023_b     → contest joig2023     / task joig2023_b
+            parts_ = stem.split("_")
+            if len(parts_) >= 2:
+                contest_slug = "".join(parts_[:-1])  # 最後の(問題記号)以外を結合
+                task_slug = stem
+                prob = parts_[-1].upper() if len(parts_[-1]) == 1 else "—"
+                return {
+                    "group": group,
+                    "round": subcontest,
+                    "prob": prob,
+                    "contest_slug": contest_slug,
+                    "task_slug": task_slug,
+                }
+
+        # 3) ASCII ハイフンだけの subcontest は、そのまま contests/<subcontest>/tasks/<stem> を試す
+        #    例: math-and-algorithm / abc-like 以外でも slug がそのままならOK
+        if ASCII_HYPHEN_RE.fullmatch(subcontest) and re.search(r"_", stem):
+            contest_slug = subcontest
+            task_slug = stem
+            m_last = re.search(r"_([a-z])$", stem)
+            prob = (m_last.group(1).upper() if m_last else "—")
+            return {
+                "group": group,
+                "round": subcontest,
+                "prob": prob,
+                "contest_slug": contest_slug,
+                "task_slug": task_slug,
+            }
+
+        # 4) dp 風：ディレクトリが edpc じゃないけど、ファイル名が dp_a 等ならそのまま
+        if re.fullmatch(r"dp_[a-z]", stem):
+            return {
+                "group": group,
+                "round": subcontest,
+                "prob": stem[-1].upper(),
+                "contest_slug": "dp",
+                "task_slug": stem,
+            }
+
+        # 5) どうしても特定できない場合はリンクなし
+        return {
+            "group": group,
+            "round": subcontest,
+            "prob": "—",
+            "contest_slug": None,
+            "task_slug": None,
+        }
+
+    return None
+
+
+def task_url(contest_slug: str | None, task_slug: str | None):
+    if not contest_slug or not task_slug:
+        return None
+    return f"https://atcoder.jp/contests/{contest_slug}/tasks/{task_slug}"
+
+
 def build_table_rows():
     rows = []
     per_contest = defaultdict(int)
@@ -97,35 +201,39 @@ def build_table_rows():
         rel = p.relative_to(REPO_ROOT)
         ext = p.suffix.lower()
         lang = LANG_MAP.get(ext, ext.lstrip("."))
-        info = detect_contest_round_problem(rel)
+
+        info = parse_entry(rel)
         if not info:
             continue
-        contest, round_, letter = info
 
-        per_contest[contest] += 1
+        per_contest[info["group"]] += 1
         per_lang[lang] += 1
 
-        # GitHub 上のファイルへの相対リンク
         file_link = f"[{rel.as_posix()}]({rel.as_posix()})"
+        url = task_url(info["contest_slug"], info["task_slug"])
+        if url:
+            task_cell = f"[{info['task_slug']}]({url})"
+        else:
+            task_cell = "—"
 
-        # AtCoder 問題リンク（作れない場合は "—"）
-        task_link = atcoder_task_url(contest, round_, letter)
-        task_cell = f"[{contest}{round_} {letter}]" if task_link else "—"
-        if task_link:
-            task_cell = f"[{contest}{round_} {letter}]({task_link})"
+        # Contest列はグループ名（ABC/ARC/AGC/OTHER）、Round列にラウンドorサブコンテスト
+        rows.append(
+            {
+                "contest": info["group"].upper(),
+                "round": info["round"],
+                "prob": info["prob"],
+                "lang": lang,
+                "file": file_link,
+                "task": task_cell,
+            }
+        )
 
-        rows.append({
-            "contest": contest.upper(),
-            "round": round_,
-            "prob": (letter or "—").upper(),
-            "lang": lang,
-            "file": file_link,
-            "task": task_cell
-        })
+    # 並び順: contest -> round昇順(数字優先) -> prob
+    def round_key(v):
+        r = v["round"]
+        return (0, int(r)) if isinstance(r, str) and r.isdigit() else (1, str(r))
 
-    # 並び順: contest -> round昇順 -> problem昇順
-    rows.sort(key=lambda r: (r["contest"], int(
-        r["round"]) if r["round"].isdigit() else 10**9, r["prob"]))
+    rows.sort(key=lambda r: (r["contest"], round_key(r), r["prob"]))
     return rows, per_contest, per_lang
 
 
@@ -138,81 +246,62 @@ def make_markdown():
     lang_summary = " | ".join(f"{k}: {v}" for k, v in sorted(per_lang.items()))
 
     lines = []
+    lines.append(f"**総数**: {total}")
+    if contest_summary:
+        lines.append(f"**コンテスト別**: {contest_summary}")
+    if lang_summary:
+        lines.append(f"**言語別**: {lang_summary}")
     lines.append("")
     lines.append("| Contest | Round | Problem | Lang | File | Task |")
     lines.append("|---|---:|:---:|:---:|---|---|")
-
     for r in rows:
         lines.append(
-            f"| {r['contest']} | {r['round']} | {r['prob']} | {r['lang']} | {r['file']} | {r['task']} |")
-
+            f"| {r['contest']} | {r['round']} | {r['prob']} | {r['lang']} | {r['file']} | {r['task']} |"
+        )
     return "\n".join(lines) + "\n"
 
 
 def replace_section_in_readme(new_md: str):
     if not README.exists():
-        # READMEがない場合は新規作成
         README.write_text(
-            f"""# Solutions
-
-{START_MARK}
-{new_md}{END_MARK}
-""",
-            encoding="utf-8"
+            f"# Solutions\n\n{START_MARK}\n{new_md}{END_MARK}\n", encoding="utf-8"
         )
         return True
-
     original = README.read_text(encoding="utf-8")
     if START_MARK in original and END_MARK in original:
-        pattern = re.compile(
-            re.escape(START_MARK) + r".*?" + re.escape(END_MARK),
-            re.DOTALL
-        )
+        import re as _re
+
+        pattern = _re.compile(_re.escape(START_MARK) +
+                              r".*?" + _re.escape(END_MARK), _re.DOTALL)
         updated = pattern.sub(f"{START_MARK}\n{new_md}{END_MARK}", original)
     else:
-        # マーカーがない場合は末尾に追記
         updated = original.rstrip() + f"\n\n{START_MARK}\n{new_md}{END_MARK}\n"
-
     if updated != original:
         README.write_text(updated, encoding="utf-8")
         return True
     return False
 
 
-def write_badge_json(total, per_contest, per_lang):
-    """
-    Shields endpoint 形式の JSON を複数出力する。
-    - docs/badges/total.json
-    - docs/badges/abc.json / arc.json / agc.json
-    - docs/badges/python.json / cpp.json （存在すれば）
-    """
-    def badge(label, message, color="blue"):
-        return {
-            "schemaVersion": 1,
-            "label": label,
-            "message": str(message),
-            "color": color
-        }
+# --- 既存のバッジ出力（そのまま） ---
+BADGE_DIR = REPO_ROOT / "docs" / "badges"
+BADGE_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 総数
+
+def write_badge_json(total, per_contest, per_lang):
+    def badge(label, message, color="blue"):
+        return {"schemaVersion": 1, "label": label, "message": str(message), "color": color}
+
     (BADGE_DIR / "total.json").write_text(
         json.dumps(badge("solved", total, "blue")), encoding="utf-8"
     )
-
-    # コンテスト別
-    for key in ("abc", "arc", "agc"):
-        val = per_contest.get(key, 0)
+    for key in ("abc", "arc", "agc", "other"):
         (BADGE_DIR / f"{key}.json").write_text(
-            json.dumps(badge(key.upper(), val, "informational")), encoding="utf-8"
+            json.dumps(
+                badge(key.upper(), per_contest.get(key, 0), "informational")),
+            encoding="utf-8",
         )
-
-    # 言語別（必要に応じて拡張）
-    lang_key_map = {
-        "Python": "python",
-        "C++": "cpp",
-        "JavaScript": "javascript",
-        "TypeScript": "typescript",
-    }
+    lang_key_map = {"Python": "python", "C++": "cpp",
+                    "JavaScript": "javascript", "TypeScript": "typescript"}
     for lang_label, short in lang_key_map.items():
         if lang_label in per_lang:
             (BADGE_DIR / f"{short}.json").write_text(
@@ -222,12 +311,10 @@ def write_badge_json(total, per_contest, per_lang):
 
 def main():
     md = make_markdown()
-
-    # テーブル差し替え
     changed = replace_section_in_readme(md)
 
-    # バッジ JSON も毎回更新
-    rows, per_contest, per_lang = build_table_rows()
+    # バッジ更新
+    _, per_contest, per_lang = build_table_rows()
     total = sum(per_contest.values())
     write_badge_json(total, per_contest, per_lang)
 
