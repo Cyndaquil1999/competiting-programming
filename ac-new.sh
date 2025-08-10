@@ -36,7 +36,8 @@ fi
 if [[ "$contest" =~ ^(abc|arc|agc)([0-9]+)$ ]]; then
   prefix="${BASH_REMATCH[1]}"
   num="${BASH_REMATCH[2]}"
-  round=$(printf "%03d" "$num")
+  # ✗ round=$(printf "%03d" "$num")   # 063 が 8進扱いになり 051 になってしまう
+  round=$(printf "%03d" "$((10#$num))")  # ← 10進に固定してゼロ埋め
   outdir="$prefix/$round"
 else
   outdir="other/$contest"
