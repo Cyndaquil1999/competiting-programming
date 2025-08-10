@@ -27,6 +27,7 @@
 | ABC | 061 | B | Python | [abc/061/b.py](abc/061/b.py) | [abc061_b](https://atcoder.jp/contests/abc061/tasks/abc061_b) |
 | ABC | 062 | B | Python | [abc/062/b_another.py](abc/062/b_another.py) | [abc062_b](https://atcoder.jp/contests/abc062/tasks/abc062_b) |
 | ABC | 062 | B | Python | [abc/062/b.py](abc/062/b.py) | [abc062_b](https://atcoder.jp/contests/abc062/tasks/abc062_b) |
+| ABC | 063 | A | Python | [abc/063/abc063_b.py](abc/063/abc063_b.py) | [abc063_a](https://atcoder.jp/contests/abc063/tasks/abc063_a) |
 | ABC | 067 | B | Python | [abc/067/b.py](abc/067/b.py) | [abc067_b](https://atcoder.jp/contests/abc067/tasks/abc067_b) |
 | ABC | 068 | B | Python | [abc/068/b.py](abc/068/b.py) | [abc068_b](https://atcoder.jp/contests/abc068/tasks/abc068_b) |
 | ABC | 074 | A | C++ | [abc/074/074a.cpp](abc/074/074a.cpp) | [abc074_a](https://atcoder.jp/contests/abc074/tasks/abc074_a) |
@@ -83,6 +84,7 @@
 | ABC | 158 | C | Python | [abc/158/c.py](abc/158/c.py) | [abc158_c](https://atcoder.jp/contests/abc158/tasks/abc158_c) |
 | ABC | 163 | A | Python | [abc/163/a.py](abc/163/a.py) | [abc163_a](https://atcoder.jp/contests/abc163/tasks/abc163_a) |
 | ABC | 171 | B | Python | [abc/171/b.py](abc/171/b.py) | [abc171_b](https://atcoder.jp/contests/abc171/tasks/abc171_b) |
+| ABC | 175 | A | Python | [abc/175/abc175_b.py](abc/175/abc175_b.py) | [abc175_a](https://atcoder.jp/contests/abc175/tasks/abc175_a) |
 | ABC | 205 | B | Python | [abc/205/b.py](abc/205/b.py) | [abc205_b](https://atcoder.jp/contests/abc205/tasks/abc205_b) |
 | ABC | 211 | A | Python | [abc/211/a.py](abc/211/a.py) | [abc211_a](https://atcoder.jp/contests/abc211/tasks/abc211_a) |
 | ABC | 216 | A | Python | [abc/216/abc216_b.py](abc/216/abc216_b.py) | [abc216_a](https://atcoder.jp/contests/abc216/tasks/abc216_a) |
@@ -137,6 +139,10 @@
 | OTHER | joi | D | Python | [other/joi/joi2022_yo1a_d.py](other/joi/joi2022_yo1a_d.py) | [joi2022_yo1a_d](https://atcoder.jp/contests/joi2022yo1a/tasks/joi2022_yo1a_d) |
 | OTHER | joi | D | Python | [other/joi/joi2023_yo1c_d.py](other/joi/joi2023_yo1c_d.py) | [joi2023_yo1c_d](https://atcoder.jp/contests/joi2023yo1c/tasks/joi2023_yo1c_d) |
 | OTHER | joi | — | Python | [other/joi/joi2022_yo1a_d_another.py](other/joi/joi2022_yo1a_d_another.py) | [joi2022_yo1a_d_another](https://atcoder.jp/contests/joi2022yo1ad/tasks/joi2022_yo1a_d_another) |
+| OTHER | joi2021yo1b | B | Python | [other/joi2021yo1b/joi2021_yo1b_b.py](other/joi2021yo1b/joi2021_yo1b_b.py) | [joi2021_yo1b_b](https://atcoder.jp/contests/joi2021yo1b/tasks/joi2021_yo1b_b) |
+| OTHER | math-and-algorithm | — | Python | [other/math-and-algorithm/math_and_algorithm_af.py](other/math-and-algorithm/math_and_algorithm_af.py) | [math_and_algorithm_af](https://atcoder.jp/contests/math-and-algorithm/tasks/math_and_algorithm_af) |
+| OTHER | math-and-algorithm | — | Python | [other/math-and-algorithm/math_and_algorithm_br.py](other/math-and-algorithm/math_and_algorithm_br.py) | [math_and_algorithm_br](https://atcoder.jp/contests/math-and-algorithm/tasks/math_and_algorithm_br) |
+| OTHER | tessoku-book | — | Python | [other/tessoku-book/tessoku_book_cb.py](other/tessoku-book/tessoku_book_cb.py) | [tessoku_book_cb](https://atcoder.jp/contests/tessoku-book/tasks/tessoku_book_cb) |
 | OTHER | typical90 | B | Python | [other/typical90/typical90_b.py](other/typical90/typical90_b.py) | [typical90_b](https://atcoder.jp/contests/typical90/tasks/typical90_b) |
 | OTHER | typical90 | — | Python | [other/typical90/004 - Cross Sum（★2）/004.py](other/typical90/004 - Cross Sum（★2）/004.py) | — |
 | OTHER | typical90 | — | Python | [other/typical90/033 - Not Too Bright（★2）/033.py](other/typical90/033 - Not Too Bright（★2）/033.py) | — |
